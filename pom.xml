@@ -445,7 +445,7 @@
             </dependency>
             <!-- Source: https://github.com/easy-4-java/pac4j-biz — easy4j pac4j-biz -->
             <dependency>
-                <groupId>io.github.hiwepy</groupId>
+                <groupId>com.github.hiwepy</groupId>
                 <artifactId>pac4j-biz</artifactId>
                 <version>${pac4j-biz.version}</version>
             </dependency>
@@ -473,7 +473,7 @@
             </dependency>
             <!-- Source: https://github.com/easy-4-java/pac4j-oauth-ext — easy4j pac4j-oauth-ext -->
             <dependency>
-                <groupId>io.github.hiwepy</groupId>
+                <groupId>com.github.hiwepy</groupId>
                 <artifactId>pac4j-oauth-ext</artifactId>
                 <version>${pac4j-oauth-ext.version}</version>
             </dependency>
@@ -551,13 +551,13 @@
             <!-- https://github.com/hiwepy/spring-boot-starter-pac4j -->
             <!-- Source: https://github.com/easy-4-java/pac4j-spring-boot-starter — easy4j pac4j-spring-boot-starter -->
             <dependency>
-                <groupId>io.github.hiwepy</groupId>
+                <groupId>com.github.hiwepy</groupId>
                 <artifactId>pac4j-spring-boot-starter</artifactId>
                 <version>${spring-boot-starter-pac4j.version}</version>
             </dependency>
             <!-- https://github.com/hiwepy/shiro-biz-spring-boot-starter -->
             <dependency>
-                <groupId>io.github.hiwepy</groupId>
+                <groupId>com.github.hiwepy</groupId>
                 <artifactId>shiro-biz-spring-boot-starter</artifactId>
                 <version>${spring-boot-starter-shiro-biz.version}</version>
             </dependency>
@@ -638,12 +638,12 @@
         <!-- https://github.com/hiwepy/spring-boot-starter-pac4j -->
         <!-- Source: https://github.com/easy-4-java/pac4j-spring-boot-starter — easy4j pac4j-spring-boot-starter -->
         <dependency>
-            <groupId>io.github.hiwepy</groupId>
+            <groupId>com.github.hiwepy</groupId>
             <artifactId>pac4j-spring-boot-starter</artifactId>
         </dependency>
         <!-- https://github.com/hiwepy/shiro-biz-spring-boot-starter -->
         <dependency>
-            <groupId>io.github.hiwepy</groupId>
+            <groupId>com.github.hiwepy</groupId>
             <artifactId>shiro-biz-spring-boot-starter</artifactId>
         </dependency>
 
