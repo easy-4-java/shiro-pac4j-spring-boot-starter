@@ -480,7 +480,7 @@
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
         <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
         <maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
-        <pac4j.version>4.5.6</pac4j.version>
+        <pac4j.version>4.5.10</pac4j.version>
         <pac4j-biz.version>1.0.x.20260630-SNAPSHOT</pac4j-biz.version>
         <pac4j-oauth-ext.version>1.0.x.20260630-SNAPSHOT</pac4j-oauth-ext.version>
         <spring-boot-starter-pac4j.version>2.7.x.20260630-SNAPSHOT</spring-boot-starter-pac4j.version>
@@ -488,6 +488,11 @@
                 <commons-io.version>2.22.0</commons-io.version>
                 <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
                 <slf4j.version>2.0.18</slf4j.version>
+        <spring-framework.version>5.3.39</spring-framework.version>
+        <jackson-bom.version>2.21.8</jackson-bom.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <guava.version>33.7.2-jre</guava.version>
         <commons-lang3.version>3.22.0</commons-lang3.version>
     </properties>
 
@@ -495,9 +500,14 @@
 
         <dependencies>
             <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.11.0</version>
+                <version>${commons-beanutils.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/io.buji/buji-pac4j -->
             <dependency>
