@@ -488,11 +488,17 @@
                 <commons-io.version>2.22.0</commons-io.version>
                 <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
                 <slf4j.version>2.0.18</slf4j.version>
+        <commons-lang3.version>3.22.0</commons-lang3.version>
     </properties>
 
     <dependencyManagement>
 
         <dependencies>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.11.0</version>
+            </dependency>
             <!-- https://mvnrepository.com/artifact/io.buji/buji-pac4j -->
             <dependency>
                 <groupId>io.buji</groupId>
