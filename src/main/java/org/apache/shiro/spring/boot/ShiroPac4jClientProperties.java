@@ -1,4 +1,4 @@
-package org.pac4j.spring.boot;
+package org.apache.shiro.spring.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -8,8 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 1.0.0
  */
-@ConfigurationProperties(Pac4jProperties.PREFIX)
-public class Pac4jProperties {
+@ConfigurationProperties(ShiroPac4jClientProperties.PREFIX)
+public class ShiroPac4jClientProperties {
 
     public static final String PREFIX = "pac4j";
 

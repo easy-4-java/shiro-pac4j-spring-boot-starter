@@ -16,24 +16,17 @@
 package org.apache.shiro.spring.boot.pac4j.ext;
 
 import org.apache.shiro.util.AntPathMatcher;
-import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.matching.matcher.PathMatcher;
 
-/**\n * Auto-configuration for Pac4jAntPathMatcher.\n *\n * @author <a href="https://github.com/loong10k">Loong Wan</a>\n * @since 1.0.0\n */
 public class Pac4jAntPathMatcher extends PathMatcher {
 
 	private AntPathMatcher matcher = new AntPathMatcher();
 
 	@Override
-	/**
-	 * matches.
-	 *
-	 * @param context the context
-	 * @return the result
-	 */
-	public boolean matches(final WebContext context) {
+	public boolean matches(final CallContext context) {
 		for (String pattern : getExcludedPaths()) {
-			if (matcher.match(pattern, context.getPath())) {
+			if (matcher.match(pattern, context.webContext().getPath())) {
 				return true;
 			}
 		}

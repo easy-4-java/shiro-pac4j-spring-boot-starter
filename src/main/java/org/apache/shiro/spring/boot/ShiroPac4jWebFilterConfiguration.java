@@ -16,22 +16,24 @@
 package org.apache.shiro.spring.boot;
 
 import io.buji.pac4j.context.ShiroSessionStore;
-import io.buji.pac4j.filter.CallbackFilter;
-import io.buji.pac4j.filter.LogoutFilter;
-import io.buji.pac4j.filter.SecurityFilter;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.LogoutFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import org.apache.shiro.biz.spring.ShiroFilterProxyFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ShiroPac4jFilterFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ext.filter.Pac4jUserFilter;
-import org.apache.shiro.spring.boot.utils.JakartaFilterAdapter;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.spring.web.config.AbstractShiroWebFilterConfiguration;
 import org.apache.shiro.web.servlet.AbstractShiroFilter;
 import org.pac4j.core.config.Config;
+import org.pac4j.framework.adapter.FrameworkAdapterImpl;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.spring.boot.Pac4jLogoutProperties;
-import org.pac4j.spring.boot.Pac4jProperties;
+
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.pac4j.spring.boot.Pac4jAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,9 +43,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 
 
 @Configuration
+@AutoConfigureAfter(Pac4jAutoConfiguration.class)
 @AutoConfigureBefore( name = {
 	"org.apache.shiro.spring.config.web.autoconfigure.ShiroWebFilterConfiguration",  // shiro-spring-boot-web-starter
 	"org.apache.shiro.spring.boot.ShiroBizWebFilterConfiguration" // spring-boot-starter-shiro-biz
@@ -56,18 +60,25 @@ import org.springframework.context.annotation.Configuration;
  */
 @ConditionalOnClass({CallbackFilter.class, SecurityFilter.class, LogoutFilter.class})
 @ConditionalOnProperty(prefix = ShiroPac4jProperties.PREFIX, value = "enabled", havingValue = "true")
-@EnableConfigurationProperties({ Pac4jProperties.class, Pac4jLogoutProperties.class, ShiroPac4jProperties.class, ShiroBizProperties.class })
+@EnableConfigurationProperties({ ShiroPac4jClientProperties.class, ShiroPac4jLogoutProperties.class, ShiroPac4jProperties.class, ShiroBizProperties.class })
 public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConfiguration implements ApplicationContextAware {
 
 	private ApplicationContext applicationContext;
 
 	@Autowired
-	private Pac4jProperties pac4jProperties;
+	private ShiroPac4jClientProperties pac4jProperties;
 	@Autowired
-	private Pac4jLogoutProperties logoutProperties;
+	private ShiroPac4jLogoutProperties logoutProperties;
 	@Autowired
 	private ShiroBizProperties bizProperties;
 	
+    @Bean
+    FrameworkAdapterImpl pac4jShiroAdapter(Config config) {
+        var adapter = new FrameworkAdapterImpl();
+        adapter.applyDefaultSettingsIfUndefined(config);
+        return adapter;
+    }
+
 	@Bean
 	protected SessionStore sessionStore() {
 		return ShiroSessionStore.INSTANCE;
@@ -77,6 +88,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 账号注销过滤器 ：处理账号注销
 	 */
 	@Bean("pac4j-logout")
+	@DependsOn("pac4jShiroAdapter")
 	@SuppressWarnings("rawtypes")
 	public FilterRegistrationBean logoutFilter(Config config){
 		
@@ -96,7 +108,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
         // Pattern that logout urls must match（注销登录路径规则，用于匹配登录请求操作）
         logoutFilter.setLogoutUrlPattern(logoutProperties.getPathPattern());
         
-        filterRegistration.setFilter(new JakartaFilterAdapter(logoutFilter));
+        filterRegistration.setFilter(logoutFilter);
 	    filterRegistration.setEnabled(false); 
 	    
 	    return filterRegistration;
@@ -106,6 +118,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 权限控制过滤器 ：实现权限认证
 	 */
 	@Bean("pac4j")
+	@DependsOn("pac4jShiroAdapter")
 	@SuppressWarnings("rawtypes")
 	public FilterRegistrationBean pac4jSecurityFilter(Config config){
 		
@@ -121,7 +134,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 		securityFilter.setConfig(config);
 		securityFilter.setMatchers(pac4jProperties.getMatchers());
 		
-        filterRegistration.setFilter(new JakartaFilterAdapter(securityFilter));
+        filterRegistration.setFilter(securityFilter);
 	    filterRegistration.setEnabled(false); 
 	    
 	    return filterRegistration;
@@ -139,7 +152,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 		FilterRegistrationBean registration = new FilterRegistrationBean(); 
 		Pac4jUserFilter userFilter = new Pac4jUserFilter();
 		userFilter.setLoginUrl(pac4jProperties.getLoginUrl());
-		registration.setFilter(new JakartaFilterAdapter(userFilter));
+		registration.setFilter(userFilter);
 	    registration.setEnabled(false); 
 	    return registration;
 	}
@@ -149,6 +162,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 回调过滤器 ：处理登录后的回调访问
 	 */
 	@Bean("pac4j-callback")
+	@DependsOn("pac4jShiroAdapter")
 	@SuppressWarnings("rawtypes")
 	public FilterRegistrationBean callbackFilter(Config config){
 		
@@ -161,7 +175,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
         // Default url after login if none was requested（登录成功后的重定向地址，等同于shiro的successUrl）
         callbackFilter.setDefaultUrl(pac4jProperties.getLoginUrl());
         
-        filterRegistration.setFilter(new JakartaFilterAdapter(callbackFilter));
+        filterRegistration.setFilter(callbackFilter);
 	    filterRegistration.setEnabled(false); 
 	    
 	    return filterRegistration;
@@ -200,7 +214,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
     protected FilterRegistrationBean filterShiroFilterRegistrationBean() throws Exception {
 
         FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
-        filterRegistrationBean.setFilter(new JakartaFilterAdapter(shiroFilterFactoryBean().getObject()));
+        filterRegistrationBean.setFilter(shiroFilterFactoryBean().getObject());
         filterRegistrationBean.setOrder(1);
 
         return filterRegistrationBean;

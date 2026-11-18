@@ -1,10 +1,9 @@
 package org.apache.shiro.spring.boot.pac4j;
 
-import io.buji.pac4j.filter.CallbackFilter;
-import io.buji.pac4j.filter.LogoutFilter;
-import io.buji.pac4j.filter.SecurityFilter;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.LogoutFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import org.apache.shiro.biz.spring.ShiroFilterProxyFactoryBean;
-import org.apache.shiro.spring.boot.utils.JakartaFilterAdapter;
 import org.apache.shiro.web.filter.AccessControlFilter;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -12,7 +11,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ObjectUtils;
 
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,10 +41,6 @@ public class ShiroPac4jFilterFactoryBean extends ShiroFilterProxyFactoryBean imp
 	}
 
 	protected boolean supports(Object filter) {
-		// Unwrap JakartaFilterAdapter if present
-		if (filter instanceof JakartaFilterAdapter) {
-			filter = ((JakartaFilterAdapter) filter).getDelegate();
-		}
 		return filter instanceof AccessControlFilter || filter instanceof org.apache.shiro.web.filter.authc.LogoutFilter
 				|| filter instanceof SecurityFilter || filter instanceof CallbackFilter || filter instanceof LogoutFilter;
 	}
@@ -61,15 +56,9 @@ public class ShiroPac4jFilterFactoryBean extends ShiroFilterProxyFactoryBean imp
 			Iterator<Entry<String, FilterRegistrationBean>> ite = beansOfType.entrySet().iterator();
 			while (ite.hasNext()) {
 				Entry<String, FilterRegistrationBean> entry = ite.next();
-				Object filterObj = entry.getValue().getFilter();
-				if (this.supports(filterObj)) {
-					// Unwrap JakartaFilterAdapter to get the original javax.servlet.Filter
-					if (filterObj instanceof JakartaFilterAdapter) {
-						filterObj = ((JakartaFilterAdapter) filterObj).getDelegate();
-					}
-					if (filterObj instanceof Filter) {
-						filters.put(entry.getKey(), (Filter) filterObj);
-					}
+				var filter = entry.getValue().getFilter();
+				if (this.supports(filter)) {
+					filters.put(entry.getKey(), filter);
 				}
 			}
 		}
