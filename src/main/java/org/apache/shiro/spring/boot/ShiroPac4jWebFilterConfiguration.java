@@ -18,6 +18,7 @@ package org.apache.shiro.spring.boot;
 import org.apache.shiro.biz.spring.ShiroFilterProxyFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ShiroPac4jFilterFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ext.filter.Pac4jUserFilter;
+import org.apache.shiro.spring.boot.biz.ShiroBizFilterFactoryBean;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.spring.web.config.AbstractShiroWebFilterConfiguration;
 import org.apache.shiro.web.servlet.AbstractShiroFilter;
@@ -159,7 +160,8 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	/**
 	 * 权限控制过滤器 ：权限过滤链的入口（仅是FactoryBean需要引用）
 	 */
-	@Bean
+	// The outer Shiro filter must not be injected into its own filter map.
+	@Bean(autowireCandidate = false)
     @Override
 	protected ShiroFilterFactoryBean shiroFilterFactoryBean() {
 
@@ -184,7 +186,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	/**
 	 * 权限控制过滤器 ：权限过滤链的入口
 	 */
-	@Bean(name = "filterShiroFilterRegistrationBean")
+	@Bean(name = ShiroBizFilterFactoryBean.FILTER_REGISTRATION_BEAN_NAME)
     protected FilterRegistrationBean<AbstractShiroFilter> filterShiroFilterRegistrationBean() throws Exception {
 
         FilterRegistrationBean<AbstractShiroFilter> filterRegistrationBean = new FilterRegistrationBean<AbstractShiroFilter>();
