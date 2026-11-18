@@ -3,10 +3,14 @@ package org.apache.shiro.spring.boot.pac4j.ext.realm;
 import io.buji.pac4j.realm.Pac4jRealm;
 import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.buji.pac4j.token.Pac4jToken;
+import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authc.SimpleAuthenticationInfo;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.pac4j.core.profile.CommonProfile;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -18,6 +22,15 @@ import java.util.Optional;
  */
 @SuppressWarnings("unchecked")
 public class Pac4jAuthorizingRealm extends Pac4jRealm {
+
+	@Override
+	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) {
+		var info = (SimpleAuthenticationInfo) super.doGetAuthenticationInfo(token);
+		var principal = info.getPrincipals().oneByType(Pac4jPrincipal.class);
+		// 保持既有应用通过 Shiro 主体访问 Pac4j profile 的契约。
+		info.setPrincipals(new SimplePrincipalCollection(List.of(principal, principal.getName()), getName()));
+		return info;
+	}
 
 	@Override
 	protected Object getAuthorizationCacheKey(PrincipalCollection principals) {

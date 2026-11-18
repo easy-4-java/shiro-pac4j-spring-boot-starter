@@ -16,8 +16,7 @@
 package org.apache.shiro.spring.boot.pac4j.ext;
 
 import org.apache.shiro.util.AntPathMatcher;
-import org.pac4j.core.context.WebContext;
-import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.matching.matcher.PathMatcher;
 
 public class Pac4jAntPathMatcher extends PathMatcher {
@@ -25,13 +24,13 @@ public class Pac4jAntPathMatcher extends PathMatcher {
 	private AntPathMatcher matcher = new AntPathMatcher();
 
 	@Override
-	public boolean matches(final WebContext context, final SessionStore sessionStore) {
+	public boolean matches(final CallContext context) {
 		for (String pattern : getExcludedPaths()) {
-			if (matcher.match(pattern, context.getPath())) {
+			if (matcher.match(pattern, context.webContext().getPath())) {
 				return true;
 			}
 		}
-		return super.matches(context, sessionStore);
+		return super.matches(context);
 	}
 
 }

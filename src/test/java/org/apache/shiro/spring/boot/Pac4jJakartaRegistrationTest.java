@@ -2,15 +2,16 @@ package org.apache.shiro.spring.boot;
 
 import java.util.List;
 
-import io.buji.pac4j.realm.Pac4jRealm;
+import org.apache.shiro.spring.boot.pac4j.ext.realm.Pac4jAuthorizingRealm;
 import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.buji.pac4j.subject.Pac4jSubjectFactory;
 import jakarta.servlet.Filter;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SubjectFactory;
-import org.apache.shiro.realm.SimpleAccountRealm;
+import org.apache.shiro.spring.boot.pac4j.jwt.Pac4jJwtRealm;
 import org.junit.jupiter.api.Test;
-import org.pac4j.core.client.Client;
+import org.pac4j.core.ext.authentication.AuthenticatingFailureCounter;
+import org.pac4j.core.ext.authentication.captcha.CaptchaResolver;
 import org.pac4j.core.config.Config;
 import org.pac4j.jee.context.JEEContext;
 import org.pac4j.core.profile.CommonProfile;
@@ -18,6 +19,9 @@ import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.engine.CallbackLogic;
 import org.pac4j.core.engine.LogoutLogic;
 import org.pac4j.core.engine.SecurityLogic;
+import org.pac4j.jwt.config.encryption.EncryptionConfiguration;
+import org.pac4j.jwt.config.signature.SignatureConfiguration;
+import org.pac4j.jwt.profile.JwtGenerator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -29,7 +33,6 @@ import org.springframework.mock.web.MockHttpSession;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class Pac4jJakartaRegistrationTest {
 
@@ -38,7 +41,7 @@ class Pac4jJakartaRegistrationTest {
         new WebApplicationContextRunner()
                 .withUserConfiguration(Application.class)
                 .withBean(Config.class, Pac4jJakartaRegistrationTest::fixtureConfig)
-                .withBean(Pac4jRealm.class, Pac4jRealm::new)
+                .withBean(Pac4jAuthorizingRealm.class, Pac4jAuthorizingRealm::new)
                 .withPropertyValues(
                         "shiro.pac4j.enabled=true",
                         "shiro.enabled=true",
@@ -68,53 +71,82 @@ class Pac4jJakartaRegistrationTest {
     }
 
     @Test
-    void startsWithThePac4jAutoConfiguration() {
+    void authenticatesASignedAndEncryptedJwtThroughTheShiroChain() {
         new WebApplicationContextRunner()
                 .withUserConfiguration(Application.class)
-                .withBean(SimpleAccountRealm.class, SimpleAccountRealm::new)
-                .withBean(Client.class, () -> {
-                    Client client = mock(Client.class);
-                    when(client.getName()).thenReturn("fixture");
-                    return client;
-                })
+                .withBean(Pac4jJwtRealm.class, Pac4jJwtRealm::new)
+                .withBean(CaptchaResolver.class, () -> mock(CaptchaResolver.class))
+                .withBean(AuthenticatingFailureCounter.class, () -> mock(AuthenticatingFailureCounter.class))
                 .withPropertyValues(
                         "pac4j.enabled=true",
-                        "pac4j.clients=fixture",
+                        "pac4j.clients=jwt-header",
+                        "pac4j.jwt.enabled=true",
+                        "pac4j.jwt.sign-secret=00000000000000000000000000000000",
+                        "pac4j.jwt.encrypt-secret=11111111111111111111111111111111",
+                        "pac4j.jwt.authorization-header-name=X-Fixture-Token",
+                        "pac4j.jwt.authorization-cookie-name=fixture-cookie",
+                        "pac4j.jwt.authorization-param-name=fixture-query",
+                        "pac4j.jwt.login-url=/sign-in",
+                        "pac4j.jwt.callback-url=https://app.example.invalid/callback",
+                        "pac4j.jwt.default-client-name=fixture-form",
                         "shiro.pac4j.enabled=true",
-                        "shiro.cache.type=memory")
+                        "shiro.cache.type=memory",
+                        "shiro.filter-chain-definition-map.[/jwt]=pac4j")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
-                    assertThat(context.getBean(Config.class).getClients().getDefaultSecurityClients()).isEqualTo("fixture");
+                    var profile = new CommonProfile();
+                    profile.setId("jwt-fixture");
+                    var generator = new JwtGenerator(context.getBean(SignatureConfiguration.class),
+                            context.getBean(EncryptionConfiguration.class));
+                    Filter dispatch = context.getBean("filterShiroFilterRegistrationBean", FilterRegistrationBean.class)
+                            .getFilter();
+                    var request = new MockHttpServletRequest("GET", "/jwt");
+                    request.setServletPath("/jwt");
+                    request.addHeader("X-Fixture-Token", generator.generate(profile));
+                    var response = new MockHttpServletResponse();
+                    dispatch.doFilter(request, response, (servletRequest, servletResponse) -> {
+                        assertThat(SecurityUtils.getSubject().isAuthenticated()).isTrue();
+                        assertThat(SecurityUtils.getSubject().getPrincipal())
+                                .isInstanceOfSatisfying(Pac4jPrincipal.class,
+                                        principal -> assertThat(principal.getProfile().getId()).isEqualTo("jwt-fixture"));
+                        response.setStatus(204);
+                    });
+                    assertThat(response.getStatus()).isEqualTo(204);
+                    assertThat(request(dispatch, "/jwt", new MockHttpSession(context.getServletContext())))
+                            .isEqualTo(401);
                 });
     }
 
     private static Config fixtureConfig() {
         var config = new Config();
         config.setSecurityLogic((SecurityLogic)
-                (context, session, settings, granted, response, clients, authorizers, matchers, parameters) -> {
+                (settings, granted, clients, authorizers, matchers, parameters) -> {
+                    var context = (JEEContext) settings.getWebContextFactory().newContext(parameters);
                     assertThat(context.getPath()).isEqualTo("/protected/account");
                     assertThat(SecurityUtils.getSubject().getPrincipal())
                             .isInstanceOfSatisfying(Pac4jPrincipal.class,
                                     principal -> assertThat(principal.getProfile().getId()).isEqualTo("fixture-user"));
-                    ((JEEContext) context).getNativeResponse().setStatus(202);
+                    context.getNativeResponse().setStatus(202);
                     return null;
                 });
         config.setCallbackLogic((CallbackLogic)
-                (context, session, settings, response, defaultUrl, renewSession, defaultClient) -> {
+                (settings, defaultUrl, renewSession, defaultClient, parameters) -> {
+                    var context = (JEEContext) settings.getWebContextFactory().newContext(parameters);
                     assertThat(context.getPath()).isEqualTo("/callback");
                     var profile = new CommonProfile();
                     profile.setId("fixture-user");
-                    settings.getProfileManagerFactory().apply(context, session).save(true, profile, false);
+                    settings.getProfileManagerFactory().apply(context, settings.getSessionStoreFactory().newSessionStore(parameters)).save(true, profile, false);
                     assertThat(SecurityUtils.getSubject().isAuthenticated()).isTrue();
-                    ((JEEContext) context).getNativeResponse().setStatus(203);
+                    context.getNativeResponse().setStatus(203);
                     return null;
                 });
         config.setLogoutLogic((LogoutLogic)
-                (context, session, settings, response, defaultUrl, pattern, local, destroySession, central) -> {
+                (settings, defaultUrl, pattern, local, destroySession, central, parameters) -> {
+                    var context = (JEEContext) settings.getWebContextFactory().newContext(parameters);
                     assertThat(context.getPath()).isEqualTo("/logout");
-                    settings.getProfileManagerFactory().apply(context, session).removeProfiles();
+                    settings.getProfileManagerFactory().apply(context, settings.getSessionStoreFactory().newSessionStore(parameters)).removeProfiles();
                     assertThat(SecurityUtils.getSubject().isAuthenticated()).isFalse();
-                    ((JEEContext) context).getNativeResponse().setStatus(204);
+                    context.getNativeResponse().setStatus(204);
                     return null;
                 });
         return config;
