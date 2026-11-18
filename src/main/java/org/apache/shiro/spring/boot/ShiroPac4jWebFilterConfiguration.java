@@ -15,10 +15,11 @@
  */
 package org.apache.shiro.spring.boot;
 
+import io.buji.pac4j.bridge.Pac4jShiroBridge;
 import io.buji.pac4j.context.ShiroSessionStore;
-import io.buji.pac4j.filter.CallbackFilter;
-import io.buji.pac4j.filter.LogoutFilter;
-import io.buji.pac4j.filter.SecurityFilter;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.LogoutFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import org.apache.shiro.biz.spring.ShiroFilterProxyFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ShiroPac4jFilterFactoryBean;
 import org.apache.shiro.spring.boot.pac4j.ext.filter.Pac4jUserFilter;
@@ -43,6 +44,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 
 
 @Configuration
@@ -65,6 +67,13 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	@Autowired
 	private ShiroBizProperties bizProperties;
 	
+    @Bean
+    Pac4jShiroBridge pac4jShiroBridge(Config config) {
+        var bridge = new Pac4jShiroBridge();
+        bridge.setConfig(config);
+        return bridge;
+    }
+
 	@Bean
 	protected SessionStore sessionStore() {
 		return ShiroSessionStore.INSTANCE;
@@ -74,6 +83,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 账号注销过滤器 ：处理账号注销
 	 */
 	@Bean("pac4j-logout")
+	@DependsOn("pac4jShiroBridge")
 	public FilterRegistrationBean<LogoutFilter> logoutFilter(Config config){
 		
 		FilterRegistrationBean<LogoutFilter> filterRegistration = new FilterRegistrationBean<LogoutFilter>();
@@ -102,6 +112,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 权限控制过滤器 ：实现权限认证
 	 */
 	@Bean("pac4j")
+	@DependsOn("pac4jShiroBridge")
 	public FilterRegistrationBean<SecurityFilter> pac4jSecurityFilter(Config config){
 		
 		FilterRegistrationBean<SecurityFilter> filterRegistration = new FilterRegistrationBean<SecurityFilter>();
@@ -138,6 +149,7 @@ public class ShiroPac4jWebFilterConfiguration extends AbstractShiroWebFilterConf
 	 * 回调过滤器 ：处理登录后的回调访问
 	 */
 	@Bean("pac4j-callback")
+	@DependsOn("pac4jShiroBridge")
 	public FilterRegistrationBean<CallbackFilter> callbackFilter(Config config){
 		
 		FilterRegistrationBean<CallbackFilter> filterRegistration = new FilterRegistrationBean<CallbackFilter>();

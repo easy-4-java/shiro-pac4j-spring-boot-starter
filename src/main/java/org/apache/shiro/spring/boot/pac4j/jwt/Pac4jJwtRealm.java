@@ -5,7 +5,7 @@ import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.buji.pac4j.token.Pac4jToken;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.PrincipalCollection;
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.profile.UserProfile;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class Pac4jJwtRealm extends Pac4jRealm {
 		if (token instanceof Pac4jToken) {
 
 			final Pac4jToken pac4jToken = (Pac4jToken) token;
-			final List<CommonProfile> profiles = pac4jToken.getProfiles();
+			final List<UserProfile> profiles = pac4jToken.getProfiles();
 			final Pac4jPrincipal principal = new Pac4jPrincipal(profiles);
 
 			return String.valueOf(principal.hashCode());
