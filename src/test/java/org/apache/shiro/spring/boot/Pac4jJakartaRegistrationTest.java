@@ -14,6 +14,7 @@ import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
 import org.pac4j.jee.context.JEEContext;
 import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.engine.CallbackLogic;
 import org.pac4j.core.engine.LogoutLogic;
 import org.pac4j.core.engine.SecurityLogic;
@@ -43,6 +44,8 @@ class Pac4jJakartaRegistrationTest {
                         "shiro.enabled=true",
                         "shiro.cache.type=memory",
                         "shiro.filter-chain-definition-map.[/protected/**]=pac4j",
+                        "shiro.filter-chain-definition-map.[/saved/**]=pac4j-user",
+                        "pac4j.login-url=/sign-in",
                         "shiro.filter-chain-definition-map.[/callback]=pac4j-callback",
                         "shiro.filter-chain-definition-map.[/logout]=pac4j-logout")
                 .run(context -> {
@@ -56,6 +59,8 @@ class Pac4jJakartaRegistrationTest {
                     Filter dispatch = context.getBean("filterShiroFilterRegistrationBean", FilterRegistrationBean.class)
                             .getFilter();
                     var session = new MockHttpSession(context.getServletContext());
+                    assertThat(request(dispatch, "/saved/account", session)).isEqualTo(302);
+                    assertThat(session.getAttribute(Pac4jConstants.REQUESTED_URL)).isEqualTo("/saved/account");
                     assertThat(request(dispatch, "/callback", session)).isEqualTo(203);
                     assertThat(request(dispatch, "/protected/account", session)).isEqualTo(202);
                     assertThat(request(dispatch, "/logout", session)).isEqualTo(204);
