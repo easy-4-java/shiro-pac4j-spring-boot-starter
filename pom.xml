@@ -484,6 +484,8 @@
         <jackson-bom.version>2.21.8</jackson-bom.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-lang3.version>3.22.0</commons-lang3.version>
+        <guava.version>33.7.2-jre</guava.version>
+        <log4j2.version>2.25.5</log4j2.version>
         <pac4j-biz.version>2.0.x.20260630-SNAPSHOT</pac4j-biz.version>
         <pac4j-oauth-ext.version>2.0.x.20260630-SNAPSHOT</pac4j-oauth-ext.version>
         <spring-boot-starter-pac4j.version>3.5.x.20260630-SNAPSHOT</spring-boot-starter-pac4j.version>
@@ -495,6 +497,11 @@
     <dependencyManagement>
 
         <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
