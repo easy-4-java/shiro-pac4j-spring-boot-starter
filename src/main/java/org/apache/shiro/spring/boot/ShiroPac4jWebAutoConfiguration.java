@@ -15,17 +15,17 @@
  */
 package org.apache.shiro.spring.boot;
 
-import io.buji.pac4j.filter.CallbackFilter;
-import io.buji.pac4j.filter.SecurityFilter;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import io.buji.pac4j.subject.Pac4jSubjectFactory;
 import org.apache.shiro.mgt.SubjectFactory;
-import org.apache.shiro.spring.web.config.AbstractShiroWebConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.pac4j.spring.boot.Pac4jAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * Auto-configuration for ShiroPac4jWebAutoConfiguration.
@@ -33,8 +33,7 @@ import org.springframework.context.annotation.Configuration;
  * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 1.0.0
  */
-@Configuration
-@AutoConfigureBefore( name = {
+@AutoConfiguration(after = Pac4jAutoConfiguration.class, beforeName = {
 	"org.apache.shiro.spring.config.web.autoconfigure.ShiroWebAutoConfiguration",
 	"org.apache.shiro.spring.boot.ShiroBizWebAutoConfiguration"
 })
@@ -47,11 +46,11 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass({CallbackFilter.class, SecurityFilter.class})
 @ConditionalOnProperty(prefix = ShiroPac4jProperties.PREFIX, value = "enabled", havingValue = "true")
 @EnableConfigurationProperties({ ShiroBizProperties.class })
-public class ShiroPac4jWebAutoConfiguration extends AbstractShiroWebConfiguration {
+public class ShiroPac4jWebAutoConfiguration {
 
 	@Bean
-	@Override
-    protected SubjectFactory subjectFactory() {
+	@Primary
+    protected SubjectFactory pac4jSubjectFactory() {
         return new Pac4jSubjectFactory();
     }
 

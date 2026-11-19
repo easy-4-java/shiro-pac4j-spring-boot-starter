@@ -20,9 +20,11 @@ import org.apache.shiro.authc.HostAuthenticationToken;
 import org.apache.shiro.authc.RememberMeAuthenticationToken;
 import org.apache.shiro.biz.authc.token.LoginType;
 import org.apache.shiro.biz.authc.token.LoginTypeAuthenticationToken;
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.profile.UserProfile;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p>Token for Pac4j Cas.</p>
@@ -41,8 +43,8 @@ public class Pac4jCasToken extends Pac4jToken implements HostAuthenticationToken
 	/** 登陆IP */
 	private String host;
 
-	public Pac4jCasToken(String host, final List<CommonProfile> profiles, final boolean isRemembered) {
-		super(profiles, isRemembered);
+	public Pac4jCasToken(String host, final List<? extends UserProfile> profiles, final boolean isRemembered) {
+		super(Objects.isNull(profiles) ? null : new ArrayList<>(profiles), isRemembered);
 		this.host = host;
 	}
 

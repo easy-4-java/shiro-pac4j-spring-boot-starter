@@ -2,8 +2,8 @@ package org.apache.shiro.spring.boot.pac4j;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.pac4j.spring.boot.Pac4jLogoutProperties;
-import org.pac4j.spring.boot.Pac4jProperties;
+import org.apache.shiro.spring.boot.ShiroPac4jLogoutProperties;
+import org.apache.shiro.spring.boot.ShiroPac4jClientProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class Pac4jPropertiesTest {
 
     @Test
-    @DisplayName("Pac4jProperties can be created with defaults")
+    @DisplayName("ShiroPac4jClientProperties can be created with defaults")
     void testPac4jPropertiesDefaults() {
-        Pac4jProperties props = new Pac4jProperties();
+        ShiroPac4jClientProperties props = new ShiroPac4jClientProperties();
         assertThat(props).isNotNull();
         assertThat(props.getClients()).isNull();
         assertThat(props.getAuthorizers()).isNull();
@@ -28,9 +28,9 @@ class Pac4jPropertiesTest {
     }
 
     @Test
-    @DisplayName("Pac4jProperties setters work correctly")
+    @DisplayName("ShiroPac4jClientProperties setters work correctly")
     void testPac4jPropertiesSetters() {
-        Pac4jProperties props = new Pac4jProperties();
+        ShiroPac4jClientProperties props = new ShiroPac4jClientProperties();
         props.setClients("testClient");
         props.setAuthorizers("testAuth");
         props.setMatchers("testMatcher");
@@ -43,9 +43,9 @@ class Pac4jPropertiesTest {
     }
 
     @Test
-    @DisplayName("Pac4jLogoutProperties can be created with defaults")
+    @DisplayName("ShiroPac4jLogoutProperties can be created with defaults")
     void testPac4jLogoutPropertiesDefaults() {
-        Pac4jLogoutProperties props = new Pac4jLogoutProperties();
+        ShiroPac4jLogoutProperties props = new ShiroPac4jLogoutProperties();
         assertThat(props).isNotNull();
         assertThat(props.isCentralLogout()).isTrue();
         assertThat(props.isLocalLogout()).isTrue();
@@ -54,9 +54,9 @@ class Pac4jPropertiesTest {
     }
 
     @Test
-    @DisplayName("Pac4jLogoutProperties setters work correctly")
+    @DisplayName("ShiroPac4jLogoutProperties setters work correctly")
     void testPac4jLogoutPropertiesSetters() {
-        Pac4jLogoutProperties props = new Pac4jLogoutProperties();
+        ShiroPac4jLogoutProperties props = new ShiroPac4jLogoutProperties();
         props.setCentralLogout(false);
         props.setLocalLogout(false);
         props.setDefaultUrl("/custom-logout");
