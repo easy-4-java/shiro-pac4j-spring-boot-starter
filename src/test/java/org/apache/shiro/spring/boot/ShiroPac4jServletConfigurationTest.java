@@ -12,7 +12,7 @@ import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.junit.jupiter.api.Test;
 import org.pac4j.core.config.Config;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -33,9 +33,7 @@ class ShiroPac4jServletConfigurationTest {
     }
 
     private static void verifyServletRegistration(WebApplicationContextRunner runner, boolean rememberMeEnabled) {
-        runner.withConfiguration(AutoConfigurations.of(ShiroBizAutoConfiguration.class,
-                        ShiroBizWebAutoConfiguration.class, ShiroBizWebFilterConfiguration.class,
-                        ShiroPac4jWebAutoConfiguration.class, ShiroPac4jWebFilterConfiguration.class))
+        runner.withUserConfiguration(Application.class)
                 .withBean(EventBus.class, DefaultEventBus::new)
                 .withBean(Realm.class, SimpleAccountRealm::new)
                 .withBean(Config.class, Config::new)
@@ -60,6 +58,11 @@ class ShiroPac4jServletConfigurationTest {
                     assertThat(factory.getFilterChainDefinitionMap()).containsEntry("/callback", "pac4j-callback");
                     assertThat(context.getBean("pac4j-callback", FilterRegistrationBean.class).isEnabled()).isFalse();
                 });
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @EnableAutoConfiguration
+    static class Application {
     }
 
     @Configuration(proxyBeanMethods = false)
