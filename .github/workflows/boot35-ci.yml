@@ -1,0 +1,98 @@
+name: Spring Boot 3.5 CI
+
+on:
+  push:
+    branches:
+      - feature/REQ-20261119-wandl-shiro-pac4j-6-jakarta
+      - test/20261122
+      - 3.5.x
+  pull_request:
+    branches:
+      - 3.5.x
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Maven 3.9.16
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/apache-maven-3.9.16-bin.tar.gz"
+          curl --fail --silent --show-error --location --retry 3 \
+            --output "$archive" \
+            https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.tar.gz
+          printf '%s  %s\n' '831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6' "$archive" | sha512sum --check
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          printf '%s\n' "$RUNNER_TEMP/apache-maven-3.9.16/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Easy4J Maven repositories
+        env:
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+        shell: bash
+        run: |
+          test -n "$MAVEN_SETTINGS_XML"
+          umask 077
+          printf '%s' "$MAVEN_SETTINGS_XML" > "$RUNNER_TEMP/maven-settings.xml"
+
+      - name: Build dependency snapshots from source
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_root="$RUNNER_TEMP/easy4j-sources"
+          mkdir -p "$source_root"
+          while read -r repo revision; do
+            source="$source_root/$repo"
+            git init -q "$source"
+            git -C "$source" fetch -q --depth=1 "https://github.com/easy-4-java/${repo}.git" "$revision"
+            git -C "$source" checkout -q --detach FETCH_HEAD
+            test "$(git -C "$source" rev-parse HEAD)" = "$revision"
+            printf '%s at %s\n' "$repo" "$revision"
+            options=()
+            case "$repo" in
+              jwt-issuer|shiro-j2cache|shiro-extension)
+                options=(-DskipTests -Djacoco.skip=true)
+                ;;
+              pac4j-extension)
+                options=(-pl pac4j-extension-core -am)
+                ;;
+            esac
+
+            mvn -B -ntp -nsu -s "$RUNNER_TEMP/maven-settings.xml" \
+              -Dmaven.repo.local="$RUNNER_TEMP/verified-m2" \
+              -Dgpg.skip=true -f "$source/pom.xml" "${options[@]}" clean install
+          done <<'SOURCES'
+          jwt-issuer 67490d6b54a7addb8ff6dc99f8f3602dfb1f1c9e
+          shiro-j2cache 0d8df10aeee349a1958d97604b7807acca38f83c
+          shiro-extension 3f837a979b5a3ed2bb52bf7596525b20035d81b3
+          shiro-extension-spring-boot-starter 32e37463bbe9afcaf1df42923531b59a8cc0ce21
+          pac4j-extension 1cbd69f8265a3bf90f6dfcdc251df32dcd5cc8e9
+          pac4j-oauth-extension 0a3157abdf340aea916bb49e552f056a61bbaa3b
+          pac4j-spring-boot-starter 8b4d3eef67e3cc4cd237640f7cf06c17d12976ed
+          SOURCES
+
+      - name: Verify the Boot 3.5 starter
+        run: >
+          mvn -B -ntp -nsu -s "$RUNNER_TEMP/maven-settings.xml"
+          -Dmaven.repo.local="$RUNNER_TEMP/verified-m2" clean verify
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-reports
+          path: |
+            target/surefire-reports
+            target/site/jacoco

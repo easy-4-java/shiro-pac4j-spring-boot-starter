@@ -15,8 +15,8 @@
  */
 package org.apache.shiro.spring.boot;
 
-import io.buji.pac4j.filter.CallbackFilter;
-import io.buji.pac4j.filter.SecurityFilter;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import io.buji.pac4j.subject.Pac4jSubjectFactory;
 import org.apache.shiro.mgt.SubjectFactory;
 import org.apache.shiro.spring.web.config.AbstractShiroWebConfiguration;
