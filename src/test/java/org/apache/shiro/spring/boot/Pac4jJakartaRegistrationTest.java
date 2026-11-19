@@ -7,6 +7,8 @@ import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.buji.pac4j.subject.Pac4jSubjectFactory;
 import jakarta.servlet.Filter;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.web.mgt.CookieRememberMeManager;
+import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.mgt.SubjectFactory;
 import org.apache.shiro.spring.boot.pac4j.jwt.Pac4jJwtRealm;
 import org.junit.jupiter.api.Test;
@@ -22,9 +24,11 @@ import org.pac4j.core.engine.SecurityLogic;
 import org.pac4j.jwt.config.encryption.EncryptionConfiguration;
 import org.pac4j.jwt.config.signature.SignatureConfiguration;
 import org.pac4j.jwt.profile.JwtGenerator;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -54,6 +58,8 @@ class Pac4jJakartaRegistrationTest {
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     assertThat(context.getBean(SubjectFactory.class)).isInstanceOf(Pac4jSubjectFactory.class);
+                    assertThat(context.getBean(DefaultWebSecurityManager.class).getRememberMeManager())
+                            .isInstanceOf(CookieRememberMeManager.class);
                     for (String name : List.of("pac4j", "pac4j-user", "pac4j-callback", "pac4j-logout")) {
                         var registration = context.getBean(name, FilterRegistrationBean.class);
                         assertThat(registration.isEnabled()).isFalse();
@@ -72,8 +78,20 @@ class Pac4jJakartaRegistrationTest {
 
     @Test
     void authenticatesASignedAndEncryptedJwtThroughTheShiroChain() {
-        new WebApplicationContextRunner()
-                .withUserConfiguration(Application.class)
+        verifyJwtAuthentication(false);
+    }
+
+    @Test
+    void authenticatesJwtWithRememberMeDisabledByTheApplication() {
+        verifyJwtAuthentication(true);
+    }
+
+    private static void verifyJwtAuthentication(boolean disableRememberMe) {
+        var runner = new WebApplicationContextRunner().withUserConfiguration(Application.class);
+        if (disableRememberMe) {
+            runner = runner.withUserConfiguration(WithoutRememberMe.class);
+        }
+        runner
                 .withBean(Pac4jJwtRealm.class, Pac4jJwtRealm::new)
                 .withBean(CaptchaResolver.class, () -> mock(CaptchaResolver.class))
                 .withBean(AuthenticatingFailureCounter.class, () -> mock(AuthenticatingFailureCounter.class))
@@ -94,6 +112,12 @@ class Pac4jJakartaRegistrationTest {
                         "shiro.filter-chain-definition-map.[/jwt]=pac4j")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
+                    var rememberMeManager = context.getBean(DefaultWebSecurityManager.class).getRememberMeManager();
+                    if (disableRememberMe) {
+                        assertThat(rememberMeManager).isNull();
+                    } else {
+                        assertThat(rememberMeManager).isInstanceOf(CookieRememberMeManager.class);
+                    }
                     var profile = new CommonProfile();
                     profile.setId("jwt-fixture");
                     var generator = new JwtGenerator(context.getBean(SignatureConfiguration.class),
@@ -159,6 +183,15 @@ class Pac4jJakartaRegistrationTest {
         var response = new MockHttpServletResponse();
         dispatch.doFilter(request, response, new MockFilterChain());
         return response.getStatus();
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class WithoutRememberMe {
+
+        @Bean
+        SmartInitializingSingleton disableShiroRememberMe(DefaultWebSecurityManager securityManager) {
+            return () -> securityManager.setRememberMeManager(null);
+        }
     }
 
     @Configuration(proxyBeanMethods = false)

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/REQ-20261119-wandl-shiro-pac4j-6-jakarta
+      - feature/REQ-20261119-wandl-shiro-pac4j-35-runtime-deps
       - test/20261122
       - 3.5.x
   pull_request:
