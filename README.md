@@ -130,6 +130,10 @@ Check the effective dependency tree from the application directory. Confirm that
 mvn dependency:tree -Dscope=runtime
 ```
 
+### CSRF advisory on the Java 8 line
+
+The resolved `pac4j-core:4.5.10` artifact is still reported by OSV under CVE-2026-40458 because the advisory database range includes versions below 5.7.10. The Pac4j maintainer's CSRF announcement lists the 5.x and 6.x lines. The published 4.5.10 JAR matches the Maven Central checksum, and its built-in `CsrfAuthorizer` compares the request token with the full session token using `String.equals`. This verification covers the built-in authorizer in that artifact. Applications using a different artifact or a custom authorizer have their own verification scope. The dependency advisory stays visible in scans. [Pac4j announcement](https://www.pac4j.org/blog/security-advisory-pac4j-core-and-ldap.html) · [4.5.10 source](https://github.com/pac4j/pac4j/blob/pac4j-4.5.10/pac4j-core/src/main/java/org/pac4j/core/authorization/authorizer/CsrfAuthorizer.java) · [GitHub advisory](https://github.com/advisories/GHSA-xw5c-jc7x-gf75)
+
 ## 6. Quick Start
 
 ### 6.1 Add dependency

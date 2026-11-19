@@ -130,6 +130,10 @@ Starter 自动装配以下 Bean：
 mvn dependency:tree -Dscope=runtime
 ```
 
+### Java 8 维护线的 CSRF 公告
+
+OSV 仍将 `pac4j-core:4.5.10` 计入 CVE-2026-40458，因为公告数据库列出的区间覆盖 5.7.10 以前的版本。Pac4j 维护者的 CSRF 公告列出 5.x 和 6.x。已用 Maven Central 校验值核对 4.5.10 制品，其内置 `CsrfAuthorizer` 通过 `String.equals` 比对完整的请求令牌与会话令牌。此核验范围为该制品的内置授权器。应用替换制品或使用自定义授权器时需按实际配置检查。扫描仍保留该公告。 [Pac4j 公告](https://www.pac4j.org/blog/security-advisory-pac4j-core-and-ldap.html) · [4.5.10 源码](https://github.com/pac4j/pac4j/blob/pac4j-4.5.10/pac4j-core/src/main/java/org/pac4j/core/authorization/authorizer/CsrfAuthorizer.java) · [GitHub 公告](https://github.com/advisories/GHSA-xw5c-jc7x-gf75)
+
 ## 6. 快速开始
 
 ### 6.1 引入依赖
