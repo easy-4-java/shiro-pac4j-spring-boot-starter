@@ -37,3 +37,27 @@
 候选 Pac4j starter 的 Maven runtime 树包含 74 个唯一 Maven 坐标，使用 OSV 查询这些解析后的版本。Shiro 的 `GHSA-m8g6-vrr2-x7ff`（`CVE-2026-56130`）已从结果中消失，`spring-webmvc:6.2.19` 仍命中两条公告。Spring 将 6.2.20 的两个修复均列为企业支持版本，开源修复版本为 7.0.9。[Shiro 公告](https://shiro.apache.org/security-reports.html#cve-2026-56130) · [CVE-2026-47884](https://spring.io/security/cve-2026-47884/) · [CVE-2026-47890](https://spring.io/security/cve-2026-47890/)
 
 Shiro 3.0.2 的公开父 POM 使用 Spring Boot 4.1.2 和 Spring Framework 7.0.10。在 Boot 3.5 上采用候选方案还需确认跨版本支持范围、按启用的共享缓存提供者验证历史会话恢复和实际运行时行为。此次功能分支提交会话和多 Realm 回归测试以及评审证据。候选生产代码保留在临时验证副本，Issue #3 的 Boot 3.5 安全验收仍开放。[Shiro 3.0.2 父 POM](https://repo.maven.apache.org/maven2/org/apache/shiro/shiro-root/3.0.2/shiro-root-3.0.2.pom) · [Issue #3](https://github.com/easy-4-java/shiro-pac4j-spring-boot-starter/issues/3)
+
+## 不使用 Remember Me 的应用
+
+Boot 3.5 的 Shiro Biz 自动配置会创建 `CookieRememberMeManager`。Shiro 将 Remember Me 已启用列为 CVE-2026-56130 的影响条件。确认应用无需 Cookie 持久登录后，可在应用配置中注册下面的 Bean。它会在 Spring 完成单例初始化时移除默认 Shiro Web 安全管理器上的 Remember Me 管理器。[Shiro 公告](https://shiro.apache.org/security-reports.html#cve-2026-56130)
+
+```java
+import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration(proxyBeanMethods = false)
+class ShiroRememberMeConfiguration {
+
+    @Bean
+    SmartInitializingSingleton disableShiroRememberMe(DefaultWebSecurityManager securityManager) {
+        return () -> securityManager.setRememberMeManager(null);
+    }
+}
+```
+
+新增回归在默认启动路径观察到 `CookieRememberMeManager`，在显式配置的路径观察到空管理器。两种配置下，经过签名和加密的 JWT 均通过真实 Shiro 过滤链完成认证，无认证凭据的请求均返回 401。JDK 17 `clean verify` 执行 8 项，零失败、零错误、零跳过，达到原覆盖率门禁。早期 BeanPostProcessor 方案在实际自动配置中未移除管理器。
+
+此配置影响 Shiro 的 Cookie 持久登录。自定义安全管理器和独立配置的其他认证路径应在各自应用中验证。Shiro 与 Spring 依赖的升级验收仍按本记录前文执行。
