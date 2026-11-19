@@ -537,7 +537,7 @@
             <!-- Source: https://github.com/easy-4-java/pac4j-biz — easy4j pac4j-biz -->
             <dependency>
                 <groupId>io.github.easy4j</groupId>
-                <artifactId>pac4j-biz</artifactId>
+                <artifactId>pac4j-extension-core</artifactId>
                 <version>${pac4j-biz.version}</version>
             </dependency>
 
@@ -565,7 +565,7 @@
             <!-- Source: https://github.com/easy-4-java/pac4j-oauth-ext — easy4j pac4j-oauth-ext -->
             <dependency>
                 <groupId>io.github.easy4j</groupId>
-                <artifactId>pac4j-oauth-ext</artifactId>
+                <artifactId>pac4j-oauth-extension</artifactId>
                 <version>${pac4j-oauth-ext.version}</version>
             </dependency>
             <!-- PAC4J For OpenId Protocol  -->
